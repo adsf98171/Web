@@ -1,0 +1,109 @@
+## index  (templates中)
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Titan AR Data - ML6BP1 Dashboard</title>
+    <!-- 引入 Bootstrap 和自定義樣式 -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f4f7f9;
+            color: #333;
+            font-family: 'Arial', sans-serif;
+        }
+        .container {
+            margin-top: 40px;
+            max-width: 600px;
+            background: #fff;
+            padding: 30px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+        h1 {
+            font-size: 2rem;
+            color: #007bff;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        h2 {
+            font-size: 1.2rem;
+            color: #6c757d;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group label {
+            font-weight: bold;
+        }
+        .form-control {
+            border-radius: 8px;
+            padding: 12px;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        /* 將回饋效果加入到輸入框中 */
+        .form-control:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+        }
+        /* 調整表單的響應式設計 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Titan AR Data</h1>
+    <h2>ML6BP1 Dashboard</h2> <!-- 添加的副標題 -->
+    
+    <form method="GET" action="/search">
+        <div class="form-group">
+            <label for="st">Start Date:</label>
+            <input type="datetime-local" class="form-control" id="st" name="st" value="2024-10-01T00:00">
+        </div>
+        <div class="form-group">
+            <label for="et">End Date:</label>
+            <input type="datetime-local" class="form-control" id="et" name="et" value="2030-12-31T23:59">
+        </div>
+        <div class="form-group">
+            <label for="lotid">Lot_ID:</label>
+            <input type="text" class="form-control" id="lotid" name="lotid" placeholder="可輸入前N碼(選填)">
+        </div>
+        <div class="form-group">
+            <label for="Recipe">Recipe:</label>
+            <input type="text" class="form-control" id="Recipe" name="Recipe" placeholder="輸入 Recipe 名稱(選填)">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Submit</button>
+    </form>
+    
+    <div class="mt-4">
+        {{ table_html|safe }}
+    </div>
+</div>
+
+<!-- 引入外部 JS -->
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+</body>
+</html>

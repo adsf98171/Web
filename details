@@ -1,0 +1,151 @@
+##  details (templates資料夾中) 
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Details for {{ glass_id }}</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+
+    <div class="container">
+        <h1 class="text-center">Details for Glass_ID: {{ glass_id }}</h1>
+        <hr>
+
+        <!-- 詳細信息 -->
+        <table class="table table-bordered">
+            <tr>
+                <th>Machine_ID</th>
+                <td>{{ data.get('Machine_ID', 'No Data Available') }}</td>
+            </tr>
+            <tr>
+                <th>Test_Time</th>
+                <td>{{ data.get('Test_Time', 'No Data Available') }}</td>
+            </tr>
+            <tr>
+                <th>Lot_ID</th>
+                <td>{{ data.get('Lot_ID', 'No Data Available') }}</td>
+            </tr>
+            <tr>
+                <th>Slot_No</th>
+                <td>{{ data.get('Slot_No', 'No Data Available') }}</td>
+            </tr>
+            <tr>
+                <th>Glass_ID</th>
+                <td>{{ data.get('Glass_ID', 'No Data Available') }}</td>
+            </tr>
+            <tr>
+                <th>Recipe_ID</th>
+                <td>{{ data.get('Recipe_ID', 'No Data Available') }}</td>
+            </tr>
+            <tr>
+                <th>Recipe_Name</th>
+                <td>{{ data.get('Recipe_Name', 'No Data Available') }}</td>
+            </tr>
+            <tr>
+                <th>Data_Number</th>
+                <td>{{ data.get('Data_Number', 'No Data Available') }}</td>
+            </tr>
+            <tr>
+                <th>CSV</th>
+                <td><a href="{{ data.get('csv', '#') }}" target="_blank" class="btn btn-primary">Download CSV</a></td>
+            </tr>
+        </table>
+
+        <!-- CSV 資料顯示 -->
+        {% if data['csv_data'] %}
+        <h3>CSV Data</h3>
+        <div>
+            {{ data['csv_data']|safe }}
+        </div>
+        {% endif %}
+        
+        <!-- 新增的統計表格 -->
+        <h3>Statistics Table</h3>
+<!--         <table class="table table-bordered"> -->
+            <table class="table table-bordered" style="width: 50%; font-size: 12px; table-layout: fixed;">
+            <thead>
+                <tr>
+                    <th>Column Name</th>
+                    <th>Mean</th>
+                    <th>Std</th>
+                    <th>Max</th>
+                    <th>Min</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for column, stats in statistics.items() %}
+                <tr>
+                    <td>{{ column }}</td>
+                    <td>{{ stats['mean'] }}</td>
+                    <td>{{ stats['std'] }}</td>
+                    <td>{{ stats['max'] }}</td>
+                    <td>{{ stats['min'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>    
+    </div>
+    
+    <!-- 散布圖顯示 -->
+    <div class="table-wrapper mt-4">
+        {{ plot_html | safe }}
+    </div>
+
+    <!-- (*)部分：增加新的表單選擇欄位與群組 -->
+    <h3>Select a Column:</h3>
+    <form method="POST" action="/select_column" target="_self">
+        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+            {% for column in draw_columns %}
+                <label style="font-size: 20px;">
+                    <input type="radio" name="column" value="{{ column }}" 
+                           {% if selected_column == column %}checked{% endif %}>
+                    {{ column }}
+                </label>
+            {% endfor %}
+        </div>
+
+        <h3>Select Groups:</h3>
+        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+            {% for group in groups %}
+                <label style="font-size: 20px;">
+                    <input type="checkbox" name="groups" value="{{ group }}"
+                           {% if group in selected_groups %}checked{% endif %}>
+                    {{ group }}
+                </label>
+            {% endfor %}
+        </div>
+
+        <br>
+        <button type="submit" class="btn btn-primary">Show Chart</button>
+    </form>
+
+    <!-- 圖表顯示區: 並排顯示 CD 和 DCD 圖表 -->
+    <div class="row mt-4">
+        <div class="col-md-6" style="height: 600px;">
+            <h4>CD Plot</h4>
+            {{ cd_plot_html|safe }}
+        </div>
+        <div class="col-md-6" style="height: 600px;">
+            <h4>DCD Plot</h4>
+            {{ dcd_plot_html|safe }}
+        </div>
+    </div>
+
+    <div>
+        {{ html_content|safe }}  <!-- 將內容插入到網頁中 -->
+    </div>
+
+    <!-- 資料顯示 -->
+    <div class="table-wrapper mt-4">
+        {{ table_html | safe }}
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.2.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+</body>
+</html>

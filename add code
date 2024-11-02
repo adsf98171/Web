@@ -1,3 +1,5 @@
+##  details (templates資料夾中) 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,38 +8,36 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>Details for {{ glass_id }}</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <style>
-        h2 {
-             font-size: 1.2rem;/*標題字體大小*/
-        }
-        h4 {
-             font-size: 1.0rem;/*每個表格標題大小*/
-        }
-        /* 統一表格樣式與字體大小 */
-        .table {
-            margin: 1px auto;/*水平居中*/
-            font-size: 0.9rem;/*表格字體大小*/
-            table-layout: fixed;
-            width: 100%;/*表格寬度*/
-        }
-        .col-md-6, .col-md-4 {/*表格周圍加一些邊距*/
-            padding: 5px;
-        }
-        .table th, .table td {
-             padding: 3px;/*減少單元格內部邊距*/
-        }
-        .statistics-container h3 {
-            font-size: 1.2rem;
-            margin-top: 0;
-        }
-        /* 讓分Scan的統計量表格按行排列 */
-        .scan-statistics-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: flex-start;
-        }
-    </style>
+	<style>
+    /* 針對 Statistics Table 下方的樣式 */
+    .statistics-container h3 {
+        font-size: 1.5rem; /* 修改標題字體大小 */
+        color: #333; /* 修改標題顏色 */
+    }
+
+    .scan-statistics-container {
+        display: flex; /* 使用 Flexbox 以便於排版 */
+        flex-wrap: wrap; /* 允許換行 */
+        justify-content: flex-start; /* 左對齊 */
+    }
+
+    .col-md-4 {
+        padding: 10px; /* 針對每個表格的周圍加一些邊距 */
+    }
+
+    .table {
+        margin: 10px auto; /* 統一表格的水平居中 */
+        font-size: 0.9rem; /* 表格字體大小 */
+        table-layout: fixed; /* 固定表格布局 */
+        width: 100%; /* 表格寬度 */
+    }
+
+    .table th, .table td {
+        padding: 5px; /* 單元格內部邊距 */
+    }
+</style>
 </head>
+
 <body>
 
     <div class="container">
@@ -84,37 +84,42 @@
             </tr>
         </table>
 
-        <!-- 原始的 Statistics Table -->
-        <div class="statistics-container">
-            <div class="statistics-table">
-                <h3>Statistics Table</h3>
-<!--                 <table class="table table-bordered"> -->
-                <table class="table table-bordered table-striped">
-                    <thead>
-                        <tr>
-                            <th>Column Name</th>
-                            <th>Mean</th>
-                            <th>Std</th>
-                            <th>Max</th>
-                            <th>Min</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for column, stats in statistics.items() %}
-                        <tr>
-                            <td>{{ column }}</td>
-                            <td>{{ stats['mean'] }}</td>
-                            <td>{{ stats['std'] }}</td>
-                            <td>{{ stats['max'] }}</td>
-                            <td>{{ stats['min'] }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>    
-            </div>
+        <!-- CSV 資料顯示 -->
+        {% if data['csv_data'] %}
+        <h3>CSV Data</h3>
+        <div>
+            {{ data['csv_data']|safe }}
         </div>
-
-        <!-- 分Scan的統計量表格，改為放置於 Statistics Table 下方 -->
+        {% endif %}
+        
+        <!-- 新增的統計表格 -->
+        <h3>Statistics Table</h3>
+<!--         <table class="table table-bordered"> -->
+            <table class="table table-bordered" style="width: 50%; font-size: 12px; table-layout: fixed;">
+            <thead>
+                <tr>
+                    <th>Column Name</th>
+                    <th>Mean</th>
+                    <th>Std</th>
+                    <th>Max</th>
+                    <th>Min</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for column, stats in statistics.items() %}
+                <tr>
+                    <td>{{ column }}</td>
+                    <td>{{ stats['mean'] }}</td>
+                    <td>{{ stats['std'] }}</td>
+                    <td>{{ stats['max'] }}</td>
+                    <td>{{ stats['min'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>    
+    </div>
+	
+	        <!-- 分Scan的統計量表格，改為放置於 Statistics Table 下方 -->
         <div class="statistics-container">
             <h3>Statistics for Scans</h3>
             <div class="scan-statistics-container">
@@ -146,14 +151,7 @@
             </div>
         </div>
 
-        <!-- CSV 資料顯示 -->
-        {% if data['csv_data'] %}
-        <h3>CSV Data</h3>
-        <div>
-            {{ data['csv_data']|safe }}
-        </div>
-        {% endif %}
-
+    
     <!-- 散布圖顯示 -->
     <div class="table-wrapper mt-4">
         {{ plot_html | safe }}
@@ -208,49 +206,8 @@
         {{ table_html | safe }}
     </div>
 
-
     <script src="https://code.jquery.com/jquery-3.5.2.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
 </body>
 </html>
-
-
-
-<style>
-    /* 加寬 CD 和 DCD 圖表容器 */
-    .cd-container, .dcd-container {
-        width: 100%; /* 設定容器寬度為 100% */
-        padding: 15px; /* 增加內邊距 */
-    }
-
-    .cd-container h4, .dcd-container h4 {
-        text-align: center;
-        font-size: 1.1rem;
-    }
-
-    /* 加寬 table_html 顯示區域 */
-    .table-wrapper {
-        width: 100%;
-        margin: 20px auto;
-        padding: 15px;
-    }
-</style>
-
-
-<div class="row mt-4">
-    <div class="col-md-6 cd-container" style="height: 600px;">
-        <h4>CD Plot</h4>
-        {{ cd_plot_html|safe }}
-    </div>
-    <div class="col-md-6 dcd-container" style="height: 600px;">
-        <h4>DCD Plot</h4>
-        {{ dcd_plot_html|safe }}
-    </div>
-</div>
-
-
-
-<div class="table-wrapper mt-4">
-    {{ table_html | safe }}
-</div>
-

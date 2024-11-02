@@ -213,3 +213,44 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>
+
+
+
+<style>
+    /* 加寬 CD 和 DCD 圖表容器 */
+    .cd-container, .dcd-container {
+        width: 100%; /* 設定容器寬度為 100% */
+        padding: 15px; /* 增加內邊距 */
+    }
+
+    .cd-container h4, .dcd-container h4 {
+        text-align: center;
+        font-size: 1.1rem;
+    }
+
+    /* 加寬 table_html 顯示區域 */
+    .table-wrapper {
+        width: 100%;
+        margin: 20px auto;
+        padding: 15px;
+    }
+</style>
+
+
+<div class="row mt-4">
+    <div class="col-md-6 cd-container" style="height: 600px;">
+        <h4>CD Plot</h4>
+        {{ cd_plot_html|safe }}
+    </div>
+    <div class="col-md-6 dcd-container" style="height: 600px;">
+        <h4>DCD Plot</h4>
+        {{ dcd_plot_html|safe }}
+    </div>
+</div>
+
+
+
+<div class="table-wrapper mt-4">
+    {{ table_html | safe }}
+</div>
+

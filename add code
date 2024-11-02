@@ -1,0 +1,90 @@
+# 計算統計資料的函數
+def calculate_stats_scan(df):
+    scan_dataframes = {}
+    stats_summary = {}
+
+    for scan_name, group in df.groupby('Scan'):
+        scan_df_name = f'{scan_name}'
+        scan_dataframes[scan_df_name] = group.copy()
+
+        target_columns = [col for col in ['L1', 'L2', 'L3', 'L4', 'L5', 'A1', 'A2'] if col in group.columns]
+        scan_dataframes[scan_df_name][target_columns] = scan_dataframes[scan_df_name][target_columns].apply(
+            lambda x: x.fillna(x.mean())
+        )
+        stats = scan_dataframes[scan_df_name][target_columns].agg(['mean', 'std', 'max', 'min']).T.round(2)
+        stats_summary[scan_df_name] = stats.replace(np.nan, '')  # 替換 NaN 為空字串
+
+    return stats_summary
+
+# 建立 /details 路由
+@app.route('/details')
+def details():
+    df = generate_data()
+    stats_summary = calculate_stats_scan(df)
+    return render_template('details.html', stats_summary=stats_summary)
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Details - Statistics</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        h2 {
+            font-size: 1.2rem; /* 標題的字體大小 */
+        }
+        h4 {
+            font-size: 1.0rem; /* 每個表格的標題大小 */
+        }
+        .table {
+            margin: 1px auto; /* 自動水平居中，並減少邊距 */
+            width: 50%; /* 設定表格寬度為 90% */
+            font-size: 0.7rem; /* 縮小表格的字體大小 */
+        }
+        .table th, .table td {
+            padding: 3px; /* 減少單元格內部邊距 */
+        }
+        .col-md-6 {
+            padding: 5px; /* 在每個表格周圍添加一些間距 */
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>Statistics for Scans</h2>
+        
+        <div class="row">
+            {% for scan_id, stats in stats_summary.items() %}
+                <div class="col-md-4 mb-4" style="width: 50%; height: auto;">
+                    <h4>Statistics table for {{ scan_id }}</h4>
+                    <table class="table table-bordered table-striped" style="width: 100%;"> <!-- 確保表格填滿容器 -->
+                        <thead>
+                            <tr>
+                                <th></th>
+                                {% for column in stats.columns %}
+                                    <th>{{ column }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row_label, row in stats.iterrows() %}
+                                <tr>
+                                    <td>{{ row_label }}</td>
+                                    {% for cell in row %}
+                                        <td>{{ cell if cell != '' else '' }}</td>  <!-- NaN 顯示為空字串 -->
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if (loop.index % 3 == 0) and not loop.last %} <!-- 分3個欄位，搭配col-md-4 mb-4使用 -->
+                    </div><div class="row"> <!-- 在每三個表格之後開始新的一行 -->
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

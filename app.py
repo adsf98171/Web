@@ -1,11 +1,3 @@
-## app.py:
-
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[ ]:
-
-
 from flask import Flask, request, render_template, jsonify, send_file, abort
 import matplotlib.pyplot as plt
 import plotly.graph_objs as go
@@ -76,11 +68,11 @@ def details(glass_id):
                      FROM dbo.AR_Titan
                      WHERE Glass_ID = '{glass_id}' AND CONVERT(varchar, ME_DATE, 120) = '{me_date[:19]}'
                  '''
-                # query_titan = f'''
-                #     SELECT Recipe_ID
-                #     FROM dbo.AR_Titan
-                #     WHERE Glass_ID = '{glass_id}'
-                # '''
+#                 query_titan = f'''
+#                     SELECT Recipe_ID
+#                     FROM dbo.AR_Titan
+#                     WHERE Glass_ID = '{glass_id}'
+#                 '''
                 df_titan = pd.read_sql(query_titan, conn)
                 if df_titan.empty:
                     return jsonify({"error": "No Recipe_ID found in AR_Titan for the specified Glass_ID."}), 404
@@ -97,12 +89,25 @@ def details(glass_id):
         return jsonify({"error": "Invalid Recipe_ID format."}), 404
 
     recipe_id_numbers = match.group(1)
+#     print(recipe_id_numbers)
+
+    # 在執行 query_measure 查詢之前，記錄 Glass_ID、Recipe_ID 和 ME_DATE 的值
+    logging.debug(f"Glass_ID: {glass_id}, Recipe_ID: {recipe_id_numbers}, ME_DATE: {me_date}")
 
     # 使用 URL 中的 me_date 或從 AR_Titan 獲取的 me_date 查詢 AR_Measure
+#     query_measure = f'''
+#         SELECT * 
+#         FROM dbo.AR_Measure 
+#         WHERE Glass_ID = '{glass_id}' AND Recipe_ID LIKE '%{recipe_id_numbers}%' AND Test_Time = '{me_date}'
+#     '''
+    
     query_measure = f'''
         SELECT * 
         FROM dbo.AR_Measure 
-        WHERE Glass_ID = '{glass_id}' AND Recipe_ID LIKE '%{recipe_id_numbers}%' AND Test_Time = '{me_date}'
+        WHERE Glass_ID = '{glass_id}' 
+        AND Recipe_ID LIKE '%{recipe_id_numbers}%' 
+        AND CONVERT(varchar, Test_Time, 120) LIKE '{me_date[:16]}%'
+        
     '''
     
     logging.debug(f"Executing query for AR_Measure: {query_measure}")
@@ -132,7 +137,6 @@ def details(glass_id):
         columns_to_replace = ['L1', 'L2', 'L3', 'L4', 'L5', 'A1', 'A2', 'G1', 'G2']
         df_measure[columns_to_replace] = df_measure[columns_to_replace].replace({None: '', np.nan: ''})
         
-        df_filtered = df_measure
         
         #漏點不刪除，不然影響Scan的Group
 #         df_filtered = df_measure[~(df_measure[columns_to_replace].isnull() | df_measure[columns_to_replace].eq('')).all(axis=1)]
@@ -143,7 +147,7 @@ def details(glass_id):
             'G1', 'G2', 'Point_Chip', 'Line_Name', 'Scan', 
             'Lens', 'SPEC', 'special_type', 'Img1', 'Img2'
         ]
-        filtered_df = df_filtered[selected_columns]
+        filtered_df = df_measure[selected_columns]
         filtered_df_sort = filtered_df.sort_values(by='Point_No', ascending=True)
 #         print(filtered_df.columns)
 
@@ -158,7 +162,7 @@ def details(glass_id):
 
 ########################################################################################################################     
 
-#統計量表格
+# #統計量表格
 
         #all
         filtered_df_sort = pd.DataFrame(filtered_df_sort)
@@ -181,6 +185,40 @@ def details(glass_id):
         # 輸出統計數據
 #         print(statistics)
 
+# ########################################################################################################################
+
+# # 計算每個Scan的統計量
+        def calculate_stats_scan(df):
+            scan_dataframes = {}
+            stats_summary = {}
+
+            for scan_name, group in df.groupby('Scan'):
+                scan_df_name = f'{scan_name}'
+                scan_dataframes[scan_df_name] = group.copy()
+
+        # 確保目標欄位為數字型別，無法轉換的設置為 NaN
+                target_columns = [col for col in ['L1', 'L2', 'L3', 'L4', 'L5', 'A1', 'A2'] if col in group.columns]
+                scan_dataframes[scan_df_name][target_columns] = scan_dataframes[scan_df_name][target_columns].apply(
+                    pd.to_numeric, errors='coerce'
+                )
+
+        # 填充 NaN 值為均值
+                scan_dataframes[scan_df_name][target_columns] = scan_dataframes[scan_df_name][target_columns].apply(
+                    lambda x: x.fillna(x.mean())
+                )
+
+        # 計算統計量
+                stats = scan_dataframes[scan_df_name][target_columns].agg(['mean', 'std', 'max', 'min']).T.round(2)
+                stats_summary[scan_df_name] = stats.replace(np.nan, '')  # 替換 NaN 為空字串
+
+            return stats_summary
+
+# 計算統計摘要
+        stats_summary = calculate_stats_scan(filtered_df_sort)
+#         print(stats_summary)
+
+
+
 ########################################################################################################################
 #散布圖
         try:
@@ -194,7 +232,7 @@ def details(glass_id):
 
             # 將 X_R 和 Y_R 進位至小數點第一位
             df_measure['X_R'] = df_measure['X_R'] #.round(1)
-            df_measure['Y_R'] = df_measure['Y_R']
+            df_measure['Y_R'] = df_measure['Y_R'] 
 
             # 使用 Plotly 繪製交互式散佈圖
             fig_plotly = px.scatter(
@@ -251,7 +289,6 @@ def details(glass_id):
                 filtered_df = filtered_df.to_numpy()
 
                 data_draw_name = assign_group(filtered_df)
-#                 data_draw_name_half = data_draw_name[0]
 #                 print(data_draw_name)
         
                 data_draw_CD = process_data(filtered_df,data_draw_name, glass_id)
@@ -310,6 +347,10 @@ def details(glass_id):
                 data_draw_CD_name['Group'] = pd.Categorical(data_draw_CD_name['Group'], categories = valid_groups, ordered = True)
                 data_draw_CD_name = data_draw_CD_name.sort_values(by=['Group', 'Sort_Scan', 'Sort_M']).reset_index(drop=True)
 
+        # 將 Point_No 更新為新的排序後的索引
+#                 data_draw_CD_name['Point_No'] = range(1, len(data_draw_CD_name) + 1)
+#                 print(data_draw_CD_name)
+
                 data_draw_DCD = generate_DCD_data(data_draw_CD_name)
                 
 #                 print(data_draw_DCD['Diff_Scan_M'].unique())
@@ -331,12 +372,17 @@ def details(glass_id):
         except Exception as e:
             logging.error(f"Error while generating plots: {e}")
 ########################################################################################################################
+        # 將散布圖嵌入HTML
+#         with open('scatter_plot.html', 'r', encoding='utf-8') as f:
+#             plotly_html_content = f.read()
 
+#         return render_template('details.html',draw_columns=draw_columns ,selected_chart=selected_chart , table_html=table_html, html_content=plotly_html_content, glass_id=glass_id, recipe_id=recipe_id, data=data)
         return render_template('details.html',
                                draw_columns=['L1','L2','L3','L4','L5','A1','A2'],
 #                                selected_chart=selected_chart,
                                table_html=table_html,
                                statistics=statistics,
+                               stats_summary = stats_summary,
                                html_content=plotly_html_content,
                                cd_plot_html=cd_plot_html,
                                dcd_plot_html = dcd_plot_html,
@@ -403,14 +449,13 @@ def search():
 
         # 在這裡記錄 ME_DATE 以便在 details 頁面中使用
         me_dates = df['Data_Time'].tolist()  # 獲取 ME_DATE 列表
-
+#         print(me_dates)
         table_html = df.to_html(classes='table table-striped table-bordered', index=False)
 
         return render_template('result.html', data=df.to_dict(orient='records'), table_html=table_html, start_date=start_time, end_date=end_time, me_dates=me_dates)
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 
 @app.route('/download_csv/<filename>') #將dat轉為csv用，但目前無效(AR01/AR02才有這問題)
@@ -549,7 +594,7 @@ def assign_group(Data, rule='rule1'):
             # 將 Unknown 值歸類到最近的群組
             if closest_group:
                 k[1] = closest_group
-#                 print(f"Assigning Unknown value at {k[0]} to nearest group: {closest_group}")
+                print(f"Assigning Unknown value at {k[0]} to nearest group: {closest_group}")
 
     return data_draw_name
 
@@ -712,9 +757,11 @@ def generate_CD_plot(column, selected_groups):
                     mode='lines+markers',
                     name=f'{group_name}',
                     hovertemplate=(
+#                         'Point No: %{customdata[0]}<br>' +
                         'Scan_M: %{x}<br>' +
                         column + ': %{y}<extra></extra>'
                     ),
+#                     customdata=group_data[['Point_No']].values,
                     line=dict(color=group_colors.get(group_name, 'rgba(0, 0, 0, 0.5)'))  # 默認為半透明的黑色
                 ))
 
@@ -937,10 +984,9 @@ def generate_DCD_plot(column, selected_groups):
         return f"Error generating plot: {str(e)}"
 
 
-# if __name__ == '__main__':
-#     app.run()
-
-
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port = 5000)
+    app.run()
 
+
+# if __name__ == '__main__':
+#     app.run(host='0.0.0.0', port = 5000)

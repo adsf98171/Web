@@ -1,283 +1,30 @@
-# 計算統計資料的函數
-def calculate_stats_scan(df):
-    scan_dataframes = {}
-    stats_summary = {}
-
-    for scan_name, group in df.groupby('Scan'):
-        scan_df_name = f'{scan_name}'
-        scan_dataframes[scan_df_name] = group.copy()
-
-        target_columns = [col for col in ['L1', 'L2', 'L3', 'L4', 'L5', 'A1', 'A2'] if col in group.columns]
-        scan_dataframes[scan_df_name][target_columns] = scan_dataframes[scan_df_name][target_columns].apply(
-            lambda x: x.fillna(x.mean())
-        )
-        stats = scan_dataframes[scan_df_name][target_columns].agg(['mean', 'std', 'max', 'min']).T.round(2)
-        stats_summary[scan_df_name] = stats.replace(np.nan, '')  # 替換 NaN 為空字串
-
-    return stats_summary
-
-# 建立 /details 路由
-@app.route('/details')
-def details():
-    df = generate_data()
-    stats_summary = calculate_stats_scan(df)
-    return render_template('details.html', stats_summary=stats_summary)
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Details - Statistics</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Details for {{ glass_id }}</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
         h2 {
-            font-size: 1.2rem; /* 標題的字體大小 */
+             font-size: 1.2rem;/*標題字體大小*/
         }
         h4 {
-            font-size: 1.0rem; /* 每個表格的標題大小 */
+             font-size: 1.0rem;/*每個表格標題大小*/
         }
-        .table {
-            margin: 1px auto; /* 自動水平居中，並減少邊距 */
-            width: 50%; /* 設定表格寬度為 90% */
-            font-size: 0.7rem; /* 縮小表格的字體大小 */
-        }
-        .table th, .table td {
-            padding: 3px; /* 減少單元格內部邊距 */
-        }
-        .col-md-6 {
-            padding: 5px; /* 在每個表格周圍添加一些間距 */
-        }
-    </style>
-</head>
-<body>
-    <div class="container mt-5">
-        <h2>Statistics for Scans</h2>
-        
-        <div class="row">
-            {% for scan_id, stats in stats_summary.items() %}
-                <div class="col-md-4 mb-4" style="width: 50%; height: auto;">
-                    <h4>Statistics table for {{ scan_id }}</h4>
-                    <table class="table table-bordered table-striped" style="width: 100%;"> <!-- 確保表格填滿容器 -->
-                        <thead>
-                            <tr>
-                                <th></th>
-                                {% for column in stats.columns %}
-                                    <th>{{ column }}</th>
-                                {% endfor %}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for row_label, row in stats.iterrows() %}
-                                <tr>
-                                    <td>{{ row_label }}</td>
-                                    {% for cell in row %}
-                                        <td>{{ cell if cell != '' else '' }}</td>  <!-- NaN 顯示為空字串 -->
-                                    {% endfor %}
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-
-                {% if (loop.index % 3 == 0) and not loop.last %} <!-- 分3個欄位，搭配col-md-4 mb-4使用 -->
-                    </div><div class="row"> <!-- 在每三個表格之後開始新的一行 -->
-                {% endif %}
-            {% endfor %}
-        </div>
-    </div>
-</body>
-</html>
-
-
-
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Details for {{ glass_id }}</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <style>
-        h2 {
-            font-size: 1.2rem;
-        }
-        h3, h4 {
-            font-size: 1.0rem;
-        }
-        .table {
-            margin: 1px auto;
-            font-size: 0.8rem;
-        }
-        .statistics-container {
-            display: flex;
-            justify-content: space-between;
-        }
-        .col-md-6 {
-            padding: 5px;
-        }
-    </style>
-</head>
-<body>
-
-    <div class="container">
-        <h1 class="text-center">Details for Glass_ID: {{ glass_id }}</h1>
-        <hr>
-
-        <!-- 詳細信息 -->
-        <table class="table table-bordered">
-            <tr><th>Machine_ID</th><td>{{ data.get('Machine_ID', 'No Data Available') }}</td></tr>
-            <tr><th>Test_Time</th><td>{{ data.get('Test_Time', 'No Data Available') }}</td></tr>
-            <tr><th>Lot_ID</th><td>{{ data.get('Lot_ID', 'No Data Available') }}</td></tr>
-            <tr><th>Slot_No</th><td>{{ data.get('Slot_No', 'No Data Available') }}</td></tr>
-            <tr><th>Glass_ID</th><td>{{ data.get('Glass_ID', 'No Data Available') }}</td></tr>
-            <tr><th>Recipe_ID</th><td>{{ data.get('Recipe_ID', 'No Data Available') }}</td></tr>
-            <tr><th>Recipe_Name</th><td>{{ data.get('Recipe_Name', 'No Data Available') }}</td></tr>
-            <tr><th>Data_Number</th><td>{{ data.get('Data_Number', 'No Data Available') }}</td></tr>
-            <tr><th>CSV</th><td><a href="{{ data.get('csv', '#') }}" target="_blank" class="btn btn-primary">Download CSV</a></td></tr>
-        </table>
-
-        <!-- CSV 資料顯示 -->
-        {% if data['csv_data'] %}
-        <h3>CSV Data</h3>
-        <div>{{ data['csv_data']|safe }}</div>
-        {% endif %}
-
-        <!-- 統計量表格 -->
-        <div class="statistics-container mt-4">
-            <!-- 全部資料的統計量表格 -->
-            <div class="col-md-6">
-                <h3>Statistics Table</h3>
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Column Name</th>
-                            <th>Mean</th>
-                            <th>Std</th>
-                            <th>Max</th>
-                            <th>Min</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for column, stats in statistics.items() %}
-                        <tr>
-                            <td>{{ column }}</td>
-                            <td>{{ stats['mean'] }}</td>
-                            <td>{{ stats['std'] }}</td>
-                            <td>{{ stats['max'] }}</td>
-                            <td>{{ stats['min'] }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- 分 Scan 的統計量表格 -->
-            <div class="col-md-6">
-                <h2>Statistics for Scans</h2>
-                <div class="row">
-                    {% for scan_id, stats in stats_summary.items() %}
-                    <div class="col-md-6 mb-4">
-                        <h4>Statistics table for {{ scan_id }}</h4>
-                        <table class="table table-bordered table-striped">
-                            <thead>
-                                <tr>
-                                    <th></th>
-                                    {% for column in stats.columns %}
-                                    <th>{{ column }}</th>
-                                    {% endfor %}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for row_label, row in stats.iterrows() %}
-                                <tr>
-                                    <td>{{ row_label }}</td>
-                                    {% for cell in row %}
-                                    <td>{{ cell if cell != '' else '' }}</td>
-                                    {% endfor %}
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {% if (loop.index % 2 == 0) and not loop.last %}
-                    </div><div class="row">
-                    {% endif %}
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-
-        <!-- 其他內容 (例如選擇欄位和圖表顯示) -->
-        <h3>Select a Column:</h3>
-        <form method="POST" action="/select_column">
-            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                {% for column in draw_columns %}
-                    <label style="font-size: 20px;">
-                        <input type="radio" name="column" value="{{ column }}" 
-                               {% if selected_column == column %}checked{% endif %}>
-                        {{ column }}
-                    </label>
-                {% endfor %}
-            </div>
-
-            <h3>Select Groups:</h3>
-            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                {% for group in groups %}
-                    <label style="font-size: 20px;">
-                        <input type="checkbox" name="groups" value="{{ group }}"
-                               {% if group in selected_groups %}checked{% endif %}>
-                        {{ group }}
-                    </label>
-                {% endfor %}
-            </div>
-
-            <br>
-            <button type="submit" class="btn btn-primary">Show Chart</button>
-        </form>
-
-        <!-- 圖表顯示 -->
-        <div class="row mt-4">
-            <div class="col-md-6" style="height: 600px;">
-                <h4>CD Plot</h4>
-                {{ cd_plot_html|safe }}
-            </div>
-            <div class="col-md-6" style="height: 600px;">
-                <h4>DCD Plot</h4>
-                {{ dcd_plot_html|safe }}
-            </div>
-        </div>
-
-        <script src="https://code.jquery.com/jquery-3.5.2.min.js"></script>
-        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    </div>
-
-</body>
-</html>
-
-
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Details for {{ glass_id }}</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <style>
         /* 統一表格樣式與字體大小 */
         .table {
-            margin: 1px auto;
-            font-size: 0.9rem;
+            margin: 1px auto;/*水平居中*/
+            font-size: 0.9rem;/*表格字體大小*/
             table-layout: fixed;
-            width: 100%;
+            width: 100%;/*表格寬度*/
         }
-        .col-md-6, .col-md-4 {
+        .col-md-6, .col-md-4 {/*表格周圍加一些邊距*/
             padding: 5px;
+        }
+        .table th, .table td {
+             padding: 3px;/*減少單元格內部邊距*/
         }
         .statistics-container h3 {
             font-size: 1.2rem;
@@ -341,7 +88,8 @@ def details():
         <div class="statistics-container">
             <div class="statistics-table">
                 <h3>Statistics Table</h3>
-                <table class="table table-bordered">
+<!--                 <table class="table table-bordered"> -->
+                <table class="table table-bordered table-striped">
                     <thead>
                         <tr>
                             <th>Column Name</th>
@@ -406,46 +154,60 @@ def details():
         </div>
         {% endif %}
 
-        <!-- 圖表與選擇表單 -->
-        <h3>Select a Column:</h3>
-        <form method="POST" action="/select_column">
-            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                {% for column in draw_columns %}
-                    <label style="font-size: 20px;">
-                        <input type="radio" name="column" value="{{ column }}" 
-                               {% if selected_column == column %}checked{% endif %}>
-                        {{ column }}
-                    </label>
-                {% endfor %}
-            </div>
+    <!-- 散布圖顯示 -->
+    <div class="table-wrapper mt-4">
+        {{ plot_html | safe }}
+    </div>
 
-            <h3>Select Groups:</h3>
-            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                {% for group in groups %}
-                    <label style="font-size: 20px;">
-                        <input type="checkbox" name="groups" value="{{ group }}"
-                               {% if group in selected_groups %}checked{% endif %}>
-                        {{ group }}
-                    </label>
-                {% endfor %}
-            </div>
-
-            <br>
-            <button type="submit" class="btn btn-primary">Show Chart</button>
-        </form>
-
-        <div class="row mt-4">
-            <div class="col-md-6" style="height: 600px;">
-                <h4>CD Plot</h4>
-                {{ cd_plot_html|safe }}
-            </div>
-            <div class="col-md-6" style="height: 600px;">
-                <h4>DCD Plot</h4>
-                {{ dcd_plot_html|safe }}
-            </div>
+    <!-- (*)部分：增加新的表單選擇欄位與群組 -->
+    <h3>Select a Column:</h3>
+    <form method="POST" action="/select_column" target="_self">
+        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+            {% for column in draw_columns %}
+                <label style="font-size: 20px;">
+                    <input type="radio" name="column" value="{{ column }}" 
+                           {% if selected_column == column %}checked{% endif %}>
+                    {{ column }}
+                </label>
+            {% endfor %}
         </div>
 
+        <h3>Select Groups:</h3>
+        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+            {% for group in groups %}
+                <label style="font-size: 20px;">
+                    <input type="checkbox" name="groups" value="{{ group }}"
+                           {% if group in selected_groups %}checked{% endif %}>
+                    {{ group }}
+                </label>
+            {% endfor %}
+        </div>
+
+        <br>
+        <button type="submit" class="btn btn-primary">Show Chart</button>
+    </form>
+
+    <!-- 圖表顯示區: 並排顯示 CD 和 DCD 圖表 -->
+    <div class="row mt-4">
+        <div class="col-md-6" style="height: 600px;">
+            <h4>CD Plot</h4>
+            {{ cd_plot_html|safe }}
+        </div>
+        <div class="col-md-6" style="height: 600px;">
+            <h4>DCD Plot</h4>
+            {{ dcd_plot_html|safe }}
+        </div>
     </div>
+
+    <div>
+        {{ html_content|safe }}  <!-- 將內容插入到網頁中 -->
+    </div>
+
+    <!-- 資料顯示 -->
+    <div class="table-wrapper mt-4">
+        {{ table_html | safe }}
+    </div>
+
 
     <script src="https://code.jquery.com/jquery-3.5.2.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>

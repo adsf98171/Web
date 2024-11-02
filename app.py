@@ -70,11 +70,17 @@ def details(glass_id):
         # 如果從 URL 獲得了 `me_date`，則使用該值
         try:
             with pyodbc.connect(connection_string) as conn:
+                #用ME_DATE找尋當時的Recipe_ID
                 query_titan = f'''
-                    SELECT Recipe_ID
-                    FROM dbo.AR_Titan
-                    WHERE Glass_ID = '{glass_id}'
-                '''
+                     SELECT Recipe_ID
+                     FROM dbo.AR_Titan
+                     WHERE Glass_ID = '{glass_id}' AND CONVERT(varchar, ME_DATE, 120) = '{me_date[:19]}'
+                 '''
+                # query_titan = f'''
+                #     SELECT Recipe_ID
+                #     FROM dbo.AR_Titan
+                #     WHERE Glass_ID = '{glass_id}'
+                # '''
                 df_titan = pd.read_sql(query_titan, conn)
                 if df_titan.empty:
                     return jsonify({"error": "No Recipe_ID found in AR_Titan for the specified Glass_ID."}), 404

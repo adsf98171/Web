@@ -8,7 +8,36 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>Details for {{ glass_id }}</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+    /* 針對 Statistics Table 下方的樣式 */
+    .statistics-container h3 {
+        font-size: 1.5rem; /* 修改標題字體大小 */
+        color: #333; /* 修改標題顏色 */
+    }
+
+    .scan-statistics-container {
+        display: flex; /* 使用 Flexbox 以便於排版 */
+        flex-wrap: wrap; /* 允許換行 */
+        justify-content: flex-start; /* 左對齊 */
+    }
+
+    .col-md-4 {
+        padding: 10px; /* 針對每個表格的周圍加一些邊距 */
+    }
+
+    .table {
+        margin: 10px auto; /* 統一表格的水平居中 */
+        font-size: 0.7rem; /* 表格字體大小 */
+/*         table-layout: fixed; 固定表格布局 */
+        width: 100%; /* 表格寬度 */
+    }
+
+    .table th, .table td {
+        padding: 5px; /* 單元格內部邊距 */
+    }
+</style>
 </head>
+
 <body>
 
     <div class="container">
@@ -66,7 +95,7 @@
         <!-- 新增的統計表格 -->
         <h3>Statistics Table</h3>
 <!--         <table class="table table-bordered"> -->
-            <table class="table table-bordered" style="width: 50%; font-size: 12px; table-layout: fixed;">
+            <table class="table table-bordered table-striped" style="width: 50%; font-size: 12px; table-layout: fixed;">
             <thead>
                 <tr>
                     <th>Column Name</th>
@@ -89,6 +118,39 @@
             </tbody>
         </table>    
     </div>
+
+       <!-- 分Scan的統計量表格，改為放置於 Statistics Table 下方 -->
+        <div class="statistics-container">
+<!--             <h3>Statistics for Scans</h3> -->
+            <div class="scan-statistics-container">
+                {% for scan_id, stats in stats_summary.items() %}
+                    <div class="col-md-4 mb-4">
+                        <h4>Statistics table for {{ scan_id }}</h4>
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    {% for column in stats.columns %}
+                                        <th>{{ column }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row_label, row in stats.iterrows() %}
+                                    <tr>
+                                        <td>{{ row_label }}</td>
+                                        {% for cell in row %}
+                                            <td>{{ cell if cell != '' else '' }}</td>
+                                        {% endfor %}
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
     
     <!-- 散布圖顯示 -->
     <div class="table-wrapper mt-4">
@@ -149,4 +211,3 @@
 
 </body>
 </html>
-
